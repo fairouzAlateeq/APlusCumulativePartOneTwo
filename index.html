@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>A+ Core 1 — PBQ Exam Simulator</title>
+<style>
+  #a1201-pbq {
+    --ink:#20252b; --muted:#5f6974; --line:#c9cfd6; --line2:#e1e5e9;
+    --panel:#ffffff; --soft:#f4f5f6; --soft2:#eef0f2; --bar:#343a40;
+    --bar2:#252a2f; --accent:#2e6ea6; --accent2:#1f5d91; --green:#24784b;
+    --amber:#a85d13; --red:#a63838; --shadow:0 8px 22px rgba(0,0,0,.12);
+    width:100%; max-width:1480px; margin:12px auto; background:var(--panel);
+    color:var(--ink); border:1px solid var(--line); box-shadow:var(--shadow);
+    font-family:Arial,Helvetica,sans-serif; line-height:1.4; overflow:hidden;
+  }
+  #a1201-pbq *{box-sizing:border-box}
+  #a1201-pbq button,#a1201-pbq input,#a1201-pbq select,#a1201-pbq textarea{font:inherit}
+  #a1201-pbq button{cursor:pointer}
+  #a1201-pbq .hidden{display:none!important}
+  #a1201-pbq .exam-top{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--bar2);color:white;padding:11px 15px;border-bottom:1px solid #111}
+  #a1201-pbq .exam-name{font-size:15px;font-weight:700;letter-spacing:.1px}
+  #a1201-pbq .exam-sub{font-size:12px;color:#d9dde1;margin-top:2px}
+  #a1201-pbq .top-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  #a1201-pbq .timer{font-variant-numeric:tabular-nums;font-weight:700;background:#171a1d;border:1px solid #555d65;border-radius:3px;padding:6px 10px;min-width:86px;text-align:center}
+  #a1201-pbq .top-btn{border:1px solid #6e767e;background:#444b52;color:#fff;border-radius:3px;padding:6px 9px;font-size:12px}
+  #a1201-pbq .top-btn:hover{background:#525a62}
+  #a1201-pbq .shell{display:grid;grid-template-columns:185px minmax(0,1fr);min-height:690px;background:#f7f7f7}
+  #a1201-pbq .side{background:#e9ecef;border-right:1px solid var(--line);padding:12px 10px;min-width:0;overflow:hidden}
+  #a1201-pbq .side-label{font-size:12px;color:#545b62;margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.45px}
+  #a1201-pbq .qnav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;width:100%;min-width:0}
+  #a1201-pbq .qnav button{appearance:none;-webkit-appearance:none;height:36px;min-width:0!important;max-width:none!important;width:100%!important;margin:0!important;padding:0!important;border:1px solid #aeb5bc;border-radius:3px;background:white;color:#2b3035;font-weight:700;position:relative;text-align:center;line-height:1}
+  #a1201-pbq .qnav button.active{background:var(--accent);color:white;border-color:var(--accent2)}
+  #a1201-pbq .qnav button.answered:not(.active)::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);position:absolute;right:3px;bottom:3px}
+  #a1201-pbq .qnav button.flagged::before{content:"⚑";position:absolute;left:3px;top:0;font-size:11px;color:#b45a12}
+  #a1201-pbq .legend{font-size:11px;color:#5e666e;margin-top:14px;border-top:1px solid #cfd4d9;padding-top:10px}
+  #a1201-pbq .legend div{margin:4px 0}
+  #a1201-pbq .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:1px}
+  #a1201-pbq .main{min-width:0;display:flex;flex-direction:column;background:white}
+  #a1201-pbq .qhead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:14px 18px;border-bottom:1px solid var(--line2);background:#fbfbfb}
+  #a1201-pbq .qhead h2{font-size:18px;margin:0 0 4px}
+  #a1201-pbq .qhead p{font-size:12px;margin:0;color:var(--muted)}
+  #a1201-pbq .flag-btn{border:1px solid #aeb5bc;background:white;border-radius:3px;padding:7px 9px;font-size:12px;white-space:nowrap}
+  #a1201-pbq .flag-btn.on{background:#fff0df;border-color:#ca7d30;color:#86440a;font-weight:700}
+  #a1201-pbq .workspace{padding:18px;overflow:auto;flex:1;min-height:0}
+  #a1201-pbq .prompt{border-left:4px solid #6d7379;background:#f5f6f7;padding:12px 14px;margin-bottom:15px;font-size:14px}
+  #a1201-pbq .prompt strong{display:block;margin-bottom:4px}
+  #a1201-pbq .task{margin:13px 0 8px;font-weight:700;font-size:14px}
+  #a1201-pbq .card{border:1px solid var(--line);background:white;border-radius:3px;padding:13px;margin:11px 0}
+  #a1201-pbq .card h3{margin:0 0 9px;font-size:14px}
+  #a1201-pbq .info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;font-size:13px}
+  #a1201-pbq .kv{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dotted #cfd3d7;padding:5px 0}
+  #a1201-pbq .kv span:first-child{color:#59616a}
+  #a1201-pbq .field-grid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:10px 14px}
+  #a1201-pbq label.field{display:block;font-size:12px;font-weight:700;color:#454c53}
+  #a1201-pbq label.field input,#a1201-pbq label.field select{width:100%;margin-top:5px;border:1px solid #9fa6ad;border-radius:2px;padding:8px;background:white;color:#20252b}
+  #a1201-pbq .choice-list{display:grid;gap:8px}
+  #a1201-pbq .choice{display:flex;gap:9px;align-items:flex-start;border:1px solid #c8cdd2;border-radius:3px;padding:9px 10px;background:white;font-size:13px}
+  #a1201-pbq .choice:hover{background:#f7f9fa}
+  #a1201-pbq .choice input{margin-top:2px}
+  #a1201-pbq .small{font-size:12px;color:var(--muted)}
+  #a1201-pbq .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:3px}
+  #a1201-pbq table{border-collapse:collapse;width:100%;font-size:12px}
+  #a1201-pbq th,#a1201-pbq td{padding:8px 9px;border-bottom:1px solid #dfe3e7;text-align:left;vertical-align:middle}
+  #a1201-pbq th{background:#eceff1;color:#3d444b;font-size:11px;text-transform:uppercase;letter-spacing:.25px}
+  #a1201-pbq tr:last-child td{border-bottom:0}
+  #a1201-pbq td select{width:100%;min-width:155px;padding:6px;border:1px solid #aab0b6;background:white}
+  #a1201-pbq .port-layout{display:grid;grid-template-columns:minmax(210px,300px) 1fr;gap:18px;align-items:start}
+  #a1201-pbq .tray{border:1px solid var(--line);background:#f3f4f5;padding:10px;min-height:270px}
+  #a1201-pbq .tray h3{font-size:12px;margin:0 0 9px;text-transform:uppercase;color:#59616a}
+  #a1201-pbq .drag-item{border:1px solid #9da4aa;background:white;padding:8px 10px;margin:7px 0;border-radius:3px;font-size:12px;font-weight:700;cursor:grab;user-select:none}
+  #a1201-pbq .drag-item.selected{outline:3px solid rgba(46,110,166,.25);border-color:var(--accent)}
+  #a1201-pbq .device-panel{border:1px solid var(--line);background:#fafafa;padding:13px}
+  #a1201-pbq .device-title{text-align:center;font-weight:700;font-size:13px;margin-bottom:12px}
+  #a1201-pbq .ports{display:grid;grid-template-columns:repeat(2,minmax(160px,1fr));gap:12px}
+  #a1201-pbq .port{border:1px solid #888f96;background:#d7dce0;min-height:90px;padding:8px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px}
+  #a1201-pbq .port-shape{background:#343a40;border:2px solid #1e2226}
+  #a1201-pbq .shape-rj{width:46px;height:32px;clip-path:polygon(8% 0,92% 0,100% 22%,100% 100%,0 100%,0 22%)}
+  #a1201-pbq .shape-hdmi{width:48px;height:24px;clip-path:polygon(10% 0,90% 0,100% 28%,90% 100%,10% 100%,0 28%)}
+  #a1201-pbq .shape-dp{width:48px;height:24px;clip-path:polygon(0 0,84% 0,100% 30%,100% 100%,0 100%)}
+  #a1201-pbq .shape-usbc{width:48px;height:19px;border-radius:10px}
+  #a1201-pbq .shape-audio{width:25px;height:25px;border-radius:50%}
+  #a1201-pbq .shape-sata{width:50px;height:16px;clip-path:polygon(0 0,80% 0,80% 35%,100% 35%,100% 100%,0 100%)}
+  #a1201-pbq .dropzone{min-height:30px;width:100%;border:1px dashed #7c848b;background:white;padding:5px;font-size:11px;color:#6a727a}
+  #a1201-pbq .dropzone.filled{border-style:solid;border-color:#5d7c96;color:#23384b;font-weight:700;background:#eef5fa}
+  #a1201-pbq .terminal{background:#101418;color:#d8e0e7;border:1px solid #050708;border-radius:2px;min-height:235px;padding:10px;font:12px/1.45 Consolas,"Courier New",monospace;white-space:pre-wrap;overflow:auto}
+  #a1201-pbq .terminal-tools{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0}
+  #a1201-pbq .cmd-btn{border:1px solid #8c949b;background:#f3f4f5;border-radius:2px;padding:6px 8px;font-size:11px}
+  #a1201-pbq .cmd-btn:hover{background:#e7e9eb}
+  #a1201-pbq .vm-diagram{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:stretch}
+  #a1201-pbq .vm-box{border:2px solid #7b838a;background:#f6f7f8;padding:12px;text-align:center;min-height:100px;display:flex;flex-direction:column;justify-content:center}
+  #a1201-pbq .vm-box select{margin-top:8px;padding:7px;border:1px solid #9fa6ad;background:white}
+  #a1201-pbq .router{border:1px solid #b9bec4;background:#f8f8f8;padding:12px}
+  #a1201-pbq .tabs{display:flex;border-bottom:1px solid #bfc5cb;margin-bottom:10px;flex-wrap:wrap}
+  #a1201-pbq .tab{border:1px solid #bfc5cb;border-bottom:0;background:#e8ebee;padding:7px 11px;font-size:12px;margin-right:3px;border-radius:3px 3px 0 0}
+  #a1201-pbq .tab.active{background:white;font-weight:700;position:relative;top:1px}
+  #a1201-pbq .tab-panel{display:none}
+  #a1201-pbq .tab-panel.active{display:block}
+  #a1201-pbq .bottom{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding:10px 14px;background:#f1f2f3}
+  #a1201-pbq .bottom-left,#a1201-pbq .bottom-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  #a1201-pbq .btn{border:1px solid #8d949b;background:white;color:#2c3136;border-radius:3px;padding:8px 13px;font-weight:700;font-size:12px}
+  #a1201-pbq .btn:hover{background:#f5f6f7}
+  #a1201-pbq .btn.primary{background:var(--accent);border-color:var(--accent2);color:white}
+  #a1201-pbq .btn.primary:hover{background:var(--accent2)}
+  #a1201-pbq .btn.danger{color:#8b2c2c;border-color:#bb7c7c}
+  #a1201-pbq .start-screen,#a1201-pbq .review-screen,#a1201-pbq .result-screen{padding:25px;min-height:640px;background:white}
+  #a1201-pbq .start-card{max-width:850px;margin:20px auto;border:1px solid var(--line);padding:22px;background:white}
+  #a1201-pbq .start-card h1{font-size:24px;margin:0 0 5px}
+  #a1201-pbq .notice{background:#f4f4f4;border:1px solid #cfd3d7;padding:11px 12px;font-size:12px;color:#4d545b;margin:13px 0}
+  #a1201-pbq .exam-instructions{font-size:13px;padding-left:20px}
+  #a1201-pbq .exam-instructions li{margin:6px 0}
+  #a1201-pbq .review-table .status-ok{color:var(--green);font-weight:700}
+  #a1201-pbq .review-table .status-miss{color:var(--amber);font-weight:700}
+  #a1201-pbq .scorebox{display:grid;grid-template-columns:160px 1fr;gap:18px;align-items:center;border:1px solid var(--line);background:#f7f8f9;padding:16px;margin-bottom:16px}
+  #a1201-pbq .scorebig{font-size:42px;font-weight:700;text-align:center}
+  #a1201-pbq .result-q{border:1px solid var(--line);margin:9px 0;background:white}
+  #a1201-pbq .result-q .rh{padding:9px 11px;background:#eceff1;font-weight:700;font-size:13px;display:flex;justify-content:space-between;gap:10px}
+  #a1201-pbq .result-q .rb{padding:10px 11px;font-size:12px;color:#424950}
+  #a1201-pbq .correct{color:var(--green);font-weight:700}
+  #a1201-pbq .partial{color:var(--amber);font-weight:700}
+  #a1201-pbq .incorrect{color:var(--red);font-weight:700}
+  #a1201-pbq .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  @media(max-width:900px){
+    #a1201-pbq .shell{grid-template-columns:1fr}
+    #a1201-pbq .side{border-right:0;border-bottom:1px solid var(--line);padding:8px 10px}
+    #a1201-pbq .qnav{grid-template-columns:repeat(8,minmax(0,1fr))}
+    #a1201-pbq .legend{display:none}
+    #a1201-pbq .port-layout{grid-template-columns:1fr}
+    #a1201-pbq .tray{min-height:0}
+  }
+  @media(max-width:640px){
+    #a1201-pbq .exam-top{align-items:flex-start}
+    #a1201-pbq .exam-sub{display:none}
+    #a1201-pbq .shell{min-height:0}
+    #a1201-pbq .field-grid,#a1201-pbq .info-grid,#a1201-pbq .vm-diagram{grid-template-columns:1fr}
+    #a1201-pbq .ports{grid-template-columns:1fr}
+    #a1201-pbq .qnav{grid-template-columns:repeat(4,minmax(0,1fr))}
+    #a1201-pbq .workspace{padding:12px}
+    #a1201-pbq .qhead{padding:11px 12px}
+    #a1201-pbq .bottom{align-items:flex-start;flex-direction:column}
+    #a1201-pbq .bottom-right{width:100%;justify-content:flex-end}
+    #a1201-pbq .scorebox{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div id="a1201-pbq">
+  <div class="exam-top">
+    <div>
+      <div class="exam-name">A+ Core 1 (220-1201) — Performance-Based Practice</div>
+      <div class="exam-sub">Independent PBQ Simulation • Training Environment</div>
+    </div>
+    <div class="top-tools">
+      <div class="timer" id="timer">01:30:00</div>
+      <button class="top-btn" type="button" id="reviewTopBtn">Review</button>
+    </div>
+  </div>
+
+  <section class="start-screen" id="startScreen">
+    <div class="start-card">
+      <h1>Performance-Based Question Simulator</h1>
+      <div class="small">Core 1 independent practice assessment</div>
+      <div class="notice"><strong>Training note:</strong> This is an original practice simulator. It is designed to reproduce common certification-exam interaction patterns without using real exam questions, proprietary exam wording, logos, or confidential content.</div>
+      <p>This assessment contains <strong>8 performance-based items</strong>. Complete each task using the controls provided in the workspace.</p>
+      <ul class="exam-instructions">
+        <li>No correctness feedback is shown while the assessment is in progress.</li>
+        <li>You may move between items using <strong>Previous</strong>, <strong>Next</strong>, or the numbered navigation buttons.</li>
+        <li>Use <strong>Flag for Review</strong> when you want to return to an item.</li>
+        <li><strong>Reset Item</strong> clears only the current item.</li>
+        <li>Some items award partial credit for correctly completed sub-tasks.</li>
+        <li>Your explanations and score become visible only after final submission.</li>
+      </ul>
+      <button class="btn primary" id="startBtn" type="button">Start Assessment</button>
+    </div>
+  </section>
+
+  <section class="shell hidden" id="examShell">
+    <aside class="side">
+      <div class="side-label">Questions</div>
+      <div class="qnav" id="qnav"></div>
+      <div class="legend">
+        <div><span class="dot" style="background:#24784b"></span>Answered</div>
+        <div>⚑ Flagged for review</div>
+        <div><strong>Blue</strong> = current item</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="qhead">
+        <div><h2 id="qTitle">Question 1 of 8</h2><p id="qMeta">Performance-Based Question</p></div>
+        <button class="flag-btn" id="flagBtn" type="button">⚑ Flag for Review</button>
+      </div>
+      <div class="workspace" id="workspace">
+
+        <section class="question" data-q="1">
+          <div class="prompt"><strong>Scenario</strong>A newly deployed desktop must use the network settings assigned by the network administrator. The workstation is currently disconnected from company resources.</div>
+          <div class="card">
+            <h3>Administrator's deployment sheet</h3>
+            <div class="info-grid">
+              <div class="kv"><span>Assigned workstation address</span><b>192.168.50.27</b></div>
+              <div class="kv"><span>Network prefix</span><b>/24</b></div>
+              <div class="kv"><span>Router</span><b>192.168.50.1</b></div>
+              <div class="kv"><span>Internal DNS server</span><b>192.168.50.10</b></div>
+            </div>
+          </div>
+          <div class="task">Configure the IPv4 properties for the workstation.</div>
+          <div class="card">
+            <div class="field-grid">
+              <label class="field">IP address<input id="q1_ip" autocomplete="off" placeholder="0.0.0.0"></label>
+              <label class="field">Subnet mask<input id="q1_mask" autocomplete="off" placeholder="0.0.0.0"></label>
+              <label class="field">Default gateway<input id="q1_gw" autocomplete="off" placeholder="0.0.0.0"></label>
+              <label class="field">Preferred DNS server<input id="q1_dns" autocomplete="off" placeholder="0.0.0.0"></label>
+            </div>
+          </div>
+        </section>
+
+        <section class="question hidden" data-q="2">
+          <div class="prompt"><strong>Scenario</strong>A small office is replacing an older wireless access point. Employees use modern laptops and should connect securely. The office router must continue assigning addresses automatically.</div>
+          <div class="card">
+            <h3>Requirements</h3>
+            <div class="info-grid">
+              <div class="kv"><span>Wireless network name</span><b>Northstar-Staff</b></div>
+              <div class="kv"><span>Highest supported security</span><b>WPA3-Personal</b></div>
+              <div class="kv"><span>Preferred band for office laptops</span><b>5 GHz</b></div>
+              <div class="kv"><span>Address assignment</span><b>Automatic</b></div>
+            </div>
+          </div>
+          <div class="task">Configure the wireless router.</div>
+          <div class="router">
+            <div class="field-grid">
+              <label class="field">SSID<input id="q2_ssid" autocomplete="off"></label>
+              <label class="field">Security mode<select id="q2_sec" class="shuffle-options"><option value="">Select...</option><option value="wep">WEP</option><option value="wpa3">WPA3-Personal</option><option value="open">Open</option><option value="wpa">WPA-Personal</option></select></label>
+              <label class="field">Wireless band<select id="q2_band" class="shuffle-options"><option value="">Select...</option><option value="24">2.4 GHz only</option><option value="5">5 GHz</option><option value="legacy">802.11b only</option></select></label>
+              <label class="field">DHCP server<select id="q2_dhcp" class="shuffle-options"><option value="">Select...</option><option value="off">Disabled</option><option value="on">Enabled</option></select></label>
+            </div>
+          </div>
+        </section>
+
+        <section class="question hidden" data-q="3">
+          <div class="prompt"><strong>Scenario</strong>Match each cable or connector label to the correct physical port. You may drag a label to a port or select a label and then click a port.</div>
+          <div class="task">Place all six labels.</div>
+          <div class="port-layout">
+            <div class="tray" id="q3_tray"><h3>Connector labels</h3></div>
+            <div class="device-panel">
+              <div class="device-title">Workstation I/O and internal connectors</div>
+              <div class="ports">
+                <div class="port"><div class="port-shape shape-rj"></div><div>Port A</div><div class="dropzone" data-target="rj45">Drop label here</div></div>
+                <div class="port"><div class="port-shape shape-hdmi"></div><div>Port B</div><div class="dropzone" data-target="hdmi">Drop label here</div></div>
+                <div class="port"><div class="port-shape shape-dp"></div><div>Port C</div><div class="dropzone" data-target="displayport">Drop label here</div></div>
+                <div class="port"><div class="port-shape shape-usbc"></div><div>Port D</div><div class="dropzone" data-target="usbc">Drop label here</div></div>
+                <div class="port"><div class="port-shape shape-audio"></div><div>Port E</div><div class="dropzone" data-target="audio">Drop label here</div></div>
+                <div class="port"><div class="port-shape shape-sata"></div><div>Port F</div><div class="dropzone" data-target="sata">Drop label here</div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="question hidden" data-q="4">
+          <div class="prompt"><strong>Scenario</strong>A design employee needs a workstation upgrade. The selected processor uses an AM5 socket. The workstation must use DDR5 memory, an NVMe SSD, a discrete graphics card, and a power supply with enough capacity for the selected GPU.</div>
+          <div class="card">
+            <h3>Selected processor</h3>
+            <div class="kv"><span>CPU</span><b>8-core processor • AM5 socket • 120 W class</b></div>
+          </div>
+          <div class="task">Select one component in each category that satisfies the stated requirements and is compatible with the selected processor.</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Category</th><th>Available options</th></tr></thead>
+              <tbody>
+                <tr><td>Motherboard</td><td><select id="q4_board" class="shuffle-options"><option value="">Select...</option><option value="am4">AM4 • DDR4 • PCIe</option><option value="lga">LGA1700 • DDR5 • PCIe</option><option value="am5">AM5 • DDR5 • PCIe • M.2</option></select></td></tr>
+                <tr><td>Memory</td><td><select id="q4_ram" class="shuffle-options"><option value="">Select...</option><option value="ddr4">32 GB DDR4 kit</option><option value="ddr5">32 GB DDR5 kit</option><option value="sodimm">16 GB DDR5 SO-DIMM</option></select></td></tr>
+                <tr><td>Storage</td><td><select id="q4_storage" class="shuffle-options"><option value="">Select...</option><option value="hdd">2 TB 7200-RPM SATA HDD</option><option value="nvme">1 TB NVMe M.2 SSD</option><option value="usb">1 TB external USB HDD</option></select></td></tr>
+                <tr><td>Graphics</td><td><select id="q4_gpu" class="shuffle-options"><option value="">Select...</option><option value="igpu">Use integrated graphics only</option><option value="gpu650">Discrete GPU • 220 W • manufacturer recommends 650 W PSU</option><option value="legacy">Legacy PCI graphics adapter</option></select></td></tr>
+                <tr><td>Power supply</td><td><select id="q4_psu" class="shuffle-options"><option value="">Select...</option><option value="450">450 W PSU</option><option value="750">750 W PSU</option><option value="300">300 W SFX PSU</option></select></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="question hidden" data-q="5">
+          <div class="prompt"><strong>Scenario</strong>One employee cannot print to a shared office printer. Other employees printed successfully within the last five minutes. The printer display shows Ready and the printer responds to a network ping.</div>
+          <div class="card">
+            <h3>Affected workstation</h3>
+            <div class="info-grid">
+              <div class="kv"><span>Printer status</span><b>Online</b></div>
+              <div class="kv"><span>Queue</span><b>3 jobs stuck</b></div>
+              <div class="kv"><span>Driver</span><b>Generic text driver</b></div>
+              <div class="kv"><span>Printer model</span><b>ColorLaser 4200</b></div>
+            </div>
+          </div>
+          <div class="task">Match each finding with the most appropriate technician action.</div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Finding</th><th>Best action</th></tr></thead>
+            <tbody>
+              <tr><td>Other users can print and the printer responds to ping.</td><td><select id="q5_a" class="shuffle-options"><option value="">Select...</option><option value="replace">Replace printer hardware</option><option value="local">Focus troubleshooting on the affected workstation</option><option value="router">Replace the office router</option><option value="paper">Load paper in every tray</option></select></td></tr>
+              <tr><td>The affected workstation has three stuck jobs.</td><td><select id="q5_b" class="shuffle-options"><option value="">Select...</option><option value="clear">Clear/cancel the stuck print jobs</option><option value="dns">Change DNS server</option><option value="ram">Replace system RAM</option><option value="wifi">Reconnect company Wi-Fi</option></select></td></tr>
+              <tr><td>The workstation uses a generic text-only driver.</td><td><select id="q5_c" class="shuffle-options"><option value="">Select...</option><option value="driver">Install the correct printer driver</option><option value="toner">Replace toner immediately</option><option value="switch">Replace the switch</option><option value="cloud">Move files to cloud storage</option></select></td></tr>
+              <tr><td>After corrective actions are complete.</td><td><select id="q5_d" class="shuffle-options"><option value="">Select...</option><option value="verify">Print a test page and verify normal operation</option><option value="stop">Close the ticket without testing</option><option value="format">Format the workstation</option><option value="resetrouter">Factory-reset the router</option></select></td></tr>
+            </tbody>
+          </table></div>
+        </section>
+
+        <section class="question hidden" data-q="6">
+          <div class="prompt"><strong>Scenario</strong>A developer needs a second operating system for application testing without replacing the operating system already installed on the laptop. The laptop has 16 GB RAM, 8 CPU cores, and 250 GB free storage.</div>
+          <div class="task">Identify the virtualization roles and allocate reasonable starter resources to the test virtual machine.</div>
+          <div class="vm-diagram">
+            <div class="vm-box"><strong>Physical laptop + current Windows installation</strong><select id="q6_host" class="shuffle-options"><option value="">Identify...</option><option value="guest">Guest operating system</option><option value="host">Host system</option><option value="cloud">Cloud storage</option></select></div>
+            <div class="vm-box"><strong>Virtualization application running on the laptop</strong><select id="q6_hyper" class="shuffle-options"><option value="">Identify...</option><option value="gateway">Default gateway</option><option value="hyper">Hypervisor</option><option value="dns">DNS service</option></select></div>
+            <div class="vm-box"><strong>Test Linux installation inside the VM</strong><select id="q6_guest" class="shuffle-options"><option value="">Identify...</option><option value="host">Host system</option><option value="guest">Guest operating system</option><option value="firmware">Firmware</option></select></div>
+          </div>
+          <div class="card">
+            <div class="field-grid">
+              <label class="field">VM memory<select id="q6_ram" class="shuffle-options"><option value="">Select...</option><option value="4">4 GB</option><option value="16">16 GB</option><option value="32">32 GB</option></select></label>
+              <label class="field">Virtual CPUs<select id="q6_cpu" class="shuffle-options"><option value="">Select...</option><option value="8">8 vCPU</option><option value="2">2 vCPU</option><option value="16">16 vCPU</option></select></label>
+              <label class="field">Virtual disk<select id="q6_disk" class="shuffle-options"><option value="">Select...</option><option value="500">500 GB</option><option value="80">80 GB</option><option value="300">300 GB</option></select></label>
+            </div>
+            <div class="small" style="margin-top:8px">Choose values that leave adequate resources available for the host system.</div>
+          </div>
+        </section>
+
+        <section class="question hidden" data-q="7">
+          <div class="prompt"><strong>Scenario</strong>An employee reports, “The Internet works by IP address but company websites will not open by name.” Use the available diagnostic commands, then select the root cause and corrective action.</div>
+          <div class="terminal-tools">
+            <button class="cmd-btn" data-cmd="ipconfig" type="button">ipconfig /all</button>
+            <button class="cmd-btn" data-cmd="gateway" type="button">ping 192.168.20.1</button>
+            <button class="cmd-btn" data-cmd="internet" type="button">ping 8.8.8.8</button>
+            <button class="cmd-btn" data-cmd="dns" type="button">nslookup portal.northstar.local</button>
+          </div>
+          <div class="terminal" id="terminal">Microsoft Windows [Version 10.0]
+C:\&gt; _</div>
+          <div class="card">
+            <div class="field-grid">
+              <label class="field">Most likely root cause<select id="q7_root" class="shuffle-options"><option value="">Select...</option><option value="dns">DNS resolution failure</option><option value="ram">Defective RAM</option><option value="gateway">Default gateway failure</option><option value="display">Display input mismatch</option></select></label>
+              <label class="field">Best corrective action<select id="q7_fix" class="shuffle-options"><option value="">Select...</option><option value="dnsfix">Correct the DNS server setting / restore DNS service</option><option value="gpu">Replace the GPU</option><option value="mask">Change subnet mask to 255.255.0.0</option><option value="printer">Reinstall printer driver</option></select></label>
+            </div>
+          </div>
+        </section>
+
+        <section class="question hidden" data-q="8">
+          <div class="prompt"><strong>Scenario</strong>A new design workstation has four reported problems. Review each tab and select the most appropriate corrective action. Treat each symptom independently, but consider whether one issue can affect another.</div>
+          <div class="tabs" id="q8tabs">
+            <button class="tab active" data-tab="perf" type="button">System</button>
+            <button class="tab" data-tab="display" type="button">Display</button>
+            <button class="tab" data-tab="network" type="button">Network</button>
+            <button class="tab" data-tab="files" type="button">Shared Files</button>
+          </div>
+          <div class="card">
+            <div class="tab-panel active" data-panel="perf">
+              <div class="info-grid"><div class="kv"><span>CPU temperature under design load</span><b>96°C</b></div><div class="kv"><span>CPU fan</span><b>0 RPM</b></div><div class="kv"><span>Case fans</span><b>Normal</b></div><div class="kv"><span>CPU usage</span><b>67%</b></div></div>
+              <div class="task">Select the best action.</div>
+              <select id="q8_perf" class="shuffle-options"><option value="">Select...</option><option value="cool">Inspect/reconnect the CPU cooling fan and cooling assembly</option><option value="ram">Replace all RAM</option><option value="dns">Change DNS</option><option value="monitor">Replace the monitor</option></select>
+            </div>
+            <div class="tab-panel" data-panel="display">
+              <div class="info-grid"><div class="kv"><span>Primary display</span><b>Connected to discrete GPU</b></div><div class="kv"><span>Second display</span><b>Connected to motherboard HDMI</b></div><div class="kv"><span>Discrete GPU</span><b>Installed and active</b></div><div class="kv"><span>Second monitor</span><b>No signal</b></div></div>
+              <div class="task">Select the best action.</div>
+              <select id="q8_display" class="shuffle-options"><option value="">Select...</option><option value="gpuport">Connect the second monitor to an output on the discrete GPU</option><option value="format">Reinstall the operating system</option><option value="battery">Replace laptop battery</option><option value="dhcp">Enable DHCP on the printer</option></select>
+            </div>
+            <div class="tab-panel" data-panel="network">
+              <div class="info-grid"><div class="kv"><span>Ethernet link light</span><b>Off</b></div><div class="kv"><span>IPv4 address</span><b>169.254.77.22</b></div><div class="kv"><span>Default gateway</span><b>None</b></div><div class="kv"><span>Nearby switch port</span><b>Active</b></div></div>
+              <div class="task">Select the best first action.</div>
+              <select id="q8_network" class="shuffle-options"><option value="">Select...</option><option value="cable">Check/reseat the Ethernet cable and physical connection</option><option value="cloud">Reset cloud password</option><option value="gpu">Replace GPU</option><option value="dns">Change DNS server first</option></select>
+            </div>
+            <div class="tab-panel" data-panel="files">
+              <div class="info-grid"><div class="kv"><span>Cloud client</span><b>Signed in</b></div><div class="kv"><span>Local cached files</span><b>Available</b></div><div class="kv"><span>New cloud files</span><b>Unavailable</b></div><div class="kv"><span>Network state</span><b>Disconnected</b></div></div>
+              <div class="task">Select the best action.</div>
+              <select id="q8_files" class="shuffle-options"><option value="">Select...</option><option value="restore">Restore network connectivity, then verify cloud synchronization</option><option value="delete">Delete all cached files</option><option value="replace">Replace the SSD</option><option value="printer">Restart the printer</option></select>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="bottom">
+        <div class="bottom-left"><button class="btn danger" id="resetItemBtn" type="button">Reset Item</button></div>
+        <div class="bottom-right"><button class="btn" id="prevBtn" type="button">Previous</button><button class="btn primary" id="nextBtn" type="button">Next</button></div>
+      </div>
+    </main>
+  </section>
+
+  <section class="review-screen hidden" id="reviewScreen">
+    <h2 style="margin-top:0">Review Your Assessment</h2>
+    <p class="small">Items marked incomplete may still contain partial work. You can return to any item before submitting.</p>
+    <div class="table-wrap review-table"><table><thead><tr><th>Question</th><th>Status</th><th>Flag</th><th>Action</th></tr></thead><tbody id="reviewBody"></tbody></table></div>
+    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:15px">
+      <button class="btn" id="returnExamBtn" type="button">Return to Assessment</button>
+      <button class="btn primary" id="submitExamBtn" type="button">Submit Assessment</button>
+    </div>
+  </section>
+
+  <section class="result-screen hidden" id="resultScreen">
+    <h2 style="margin-top:0">Performance-Based Practice Results</h2>
+    <div class="scorebox"><div class="scorebig" id="scoreBig">0%</div><div><div id="scoreLevel" style="font-size:18px;font-weight:700;margin-bottom:4px"></div><div class="small" id="scoreText"></div></div></div>
+    <h3>Item Review</h3>
+    <div id="resultList"></div>
+    <button class="btn primary" id="restartBtn" type="button" style="margin-top:13px">Reset Assessment</button>
+  </section>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  const root=document.getElementById('a1201-pbq');
+  const startScreen=root.querySelector('#startScreen');
+  const examShell=root.querySelector('#examShell');
+  const reviewScreen=root.querySelector('#reviewScreen');
+  const resultScreen=root.querySelector('#resultScreen');
+  const qnav=root.querySelector('#qnav');
+  const qTitle=root.querySelector('#qTitle');
+  const flagBtn=root.querySelector('#flagBtn');
+  const timerEl=root.querySelector('#timer');
+  const questions=[...root.querySelectorAll('.question')];
+  let current=1, started=false, submitted=false, seconds=90*60, timerHandle=null;
+  const flags=new Set();
+  let selectedDrag=null;
+
+  const explanations={
+    1:{title:'IPv4 workstation configuration',text:'The assigned address is 192.168.50.27. A /24 prefix corresponds to 255.255.255.0. The router is the default gateway, and the listed internal DNS server provides name resolution.'},
+    2:{title:'Secure office wireless configuration',text:'The router should use the specified SSID, the strongest supported security mode listed, the preferred 5 GHz band, and DHCP enabled so clients receive network settings automatically.'},
+    3:{title:'Ports and connectors',text:'The physical shapes correspond to RJ-45 Ethernet, HDMI, DisplayPort, USB-C, 3.5 mm audio, and SATA. Correct port recognition helps avoid unnecessary troubleshooting.'},
+    4:{title:'Hardware compatibility',text:'The AM5 processor requires an AM5 motherboard. The requirement specifies DDR5 and NVMe storage. The discrete GPU option calls for at least a 650 W PSU, so the 750 W unit provides appropriate capacity.'},
+    5:{title:'Printer troubleshooting',text:'Because other users can print and the printer responds over the network, the problem is localized to the affected workstation. Clear the stuck queue, install the correct driver, then print a test page to verify the fix.'},
+    6:{title:'Virtualization roles and resources',text:'The physical laptop and its current OS are the host, the virtualization application is the hypervisor, and the test OS is the guest. A moderate allocation such as 4 GB RAM, 2 vCPU, and 80 GB storage leaves usable resources for the host.'},
+    7:{title:'Name-resolution troubleshooting',text:'A valid address plus successful gateway and external-IP pings show that local and Internet IP connectivity work. Failed name resolution points to DNS. Correcting the DNS server setting or restoring DNS service addresses the root cause.'},
+    8:{title:'Multi-issue workstation',text:'A stopped CPU fan with a 96°C processor points to cooling. A second monitor attached to motherboard video while the discrete GPU is active should be moved to the GPU. No link light plus an APIPA address requires checking the physical Ethernet connection first. Cloud synchronization should be verified after network connectivity is restored.'}
+  };
+
+  const checks={
+    1:[()=>val('q1_ip')==='192.168.50.27',()=>val('q1_mask')==='255.255.255.0',()=>val('q1_gw')==='192.168.50.1',()=>val('q1_dns')==='192.168.50.10'],
+    2:[()=>val('q2_ssid').toLowerCase()==='northstar-staff',()=>val('q2_sec')==='wpa3',()=>val('q2_band')==='5',()=>val('q2_dhcp')==='on'],
+    3:[()=>dropCorrect('rj45'),()=>dropCorrect('hdmi'),()=>dropCorrect('displayport'),()=>dropCorrect('usbc'),()=>dropCorrect('audio'),()=>dropCorrect('sata')],
+    4:[()=>val('q4_board')==='am5',()=>val('q4_ram')==='ddr5',()=>val('q4_storage')==='nvme',()=>val('q4_gpu')==='gpu650',()=>val('q4_psu')==='750'],
+    5:[()=>val('q5_a')==='local',()=>val('q5_b')==='clear',()=>val('q5_c')==='driver',()=>val('q5_d')==='verify'],
+    6:[()=>val('q6_host')==='host',()=>val('q6_hyper')==='hyper',()=>val('q6_guest')==='guest',()=>val('q6_ram')==='4',()=>val('q6_cpu')==='2',()=>val('q6_disk')==='80'],
+    7:[()=>val('q7_root')==='dns',()=>val('q7_fix')==='dnsfix'],
+    8:[()=>val('q8_perf')==='cool',()=>val('q8_display')==='gpuport',()=>val('q8_network')==='cable',()=>val('q8_files')==='restore']
+  };
+
+  function val(id){const e=root.querySelector('#'+id);return e?String(e.value||'').trim():'';}
+  function dropCorrect(target){const z=root.querySelector('.dropzone[data-target="'+target+'"]');return !!z && z.dataset.item===target;}
+  const correctSelectValues={
+    q2_sec:'wpa3',q2_band:'5',q2_dhcp:'on',
+    q4_board:'am5',q4_ram:'ddr5',q4_storage:'nvme',q4_gpu:'gpu650',q4_psu:'750',
+    q5_a:'local',q5_b:'clear',q5_c:'driver',q5_d:'verify',
+    q6_host:'host',q6_hyper:'hyper',q6_guest:'guest',q6_ram:'4',q6_cpu:'2',q6_disk:'80',
+    q7_root:'dns',q7_fix:'dnsfix',
+    q8_perf:'cool',q8_display:'gpuport',q8_network:'cable',q8_files:'restore'
+  };
+
+  function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+
+  function shuffleSelects(){
+    const selects=[...root.querySelectorAll('select.shuffle-options')];
+    const offset=Math.floor(Math.random()*29);
+    selects.forEach((s,index)=>{
+      const original=[...s.options];
+      const placeholder=original.find(o=>o.value==='')||original[0];
+      const opts=shuffle(original.filter(o=>o!==placeholder));
+      const correctValue=correctSelectValues[s.id];
+
+      // Keep answer positions varied across the assessment instead of allowing
+      // every correct option to appear in the same location by chance.
+      if(correctValue&&opts.length>1){
+        const ci=opts.findIndex(o=>o.value===correctValue);
+        if(ci>=0){
+          const target=(index+offset)%opts.length;
+          [opts[ci],opts[target]]=[opts[target],opts[ci]];
+        }
+      }
+
+      s.innerHTML='';
+      s.appendChild(placeholder);
+      opts.forEach(o=>s.appendChild(o));
+      s.selectedIndex=0;
+    });
+  }
+
+  function buildNav(){qnav.innerHTML='';for(let i=1;i<=questions.length;i++){const b=document.createElement('button');b.type='button';b.textContent=i;b.dataset.q=i;b.addEventListener('click',()=>showQuestion(i));qnav.appendChild(b);}updateNav();}
+  function updateNav(){[...qnav.children].forEach((b,idx)=>{const n=idx+1;b.classList.toggle('active',n===current);b.classList.toggle('answered',isAnswered(n));b.classList.toggle('flagged',flags.has(n));});qTitle.textContent='Question '+current+' of '+questions.length;flagBtn.classList.toggle('on',flags.has(current));flagBtn.textContent=flags.has(current)?'⚑ Flagged for Review':'⚑ Flag for Review';root.querySelector('#prevBtn').disabled=current===1;root.querySelector('#nextBtn').textContent=current===questions.length?'Review':'Next';}
+  function showQuestion(n){if(!started||submitted)return;current=Math.min(questions.length,Math.max(1,Number(n)||1));questions.forEach(q=>q.classList.toggle('hidden',Number(q.dataset.q)!==current));reviewScreen.classList.add('hidden');resultScreen.classList.add('hidden');examShell.classList.remove('hidden');updateNav();}
+  function isAnswered(n){switch(n){
+    case 1:return ['q1_ip','q1_mask','q1_gw','q1_dns'].some(id=>val(id));
+    case 2:return ['q2_ssid','q2_sec','q2_band','q2_dhcp'].some(id=>val(id));
+    case 3:return root.querySelectorAll('.dropzone.filled').length>0;
+    case 4:return ['q4_board','q4_ram','q4_storage','q4_gpu','q4_psu'].some(id=>val(id));
+    case 5:return ['q5_a','q5_b','q5_c','q5_d'].some(id=>val(id));
+    case 6:return ['q6_host','q6_hyper','q6_guest','q6_ram','q6_cpu','q6_disk'].some(id=>val(id));
+    case 7:return ['q7_root','q7_fix'].some(id=>val(id));
+    case 8:return ['q8_perf','q8_display','q8_network','q8_files'].some(id=>val(id));
+    default:return false;
+  }}
+  function isComplete(n){switch(n){
+    case 1:return ['q1_ip','q1_mask','q1_gw','q1_dns'].every(id=>val(id));
+    case 2:return ['q2_ssid','q2_sec','q2_band','q2_dhcp'].every(id=>val(id));
+    case 3:return root.querySelectorAll('.dropzone.filled').length===6;
+    case 4:return ['q4_board','q4_ram','q4_storage','q4_gpu','q4_psu'].every(id=>val(id));
+    case 5:return ['q5_a','q5_b','q5_c','q5_d'].every(id=>val(id));
+    case 6:return ['q6_host','q6_hyper','q6_guest','q6_ram','q6_cpu','q6_disk'].every(id=>val(id));
+    case 7:return ['q7_root','q7_fix'].every(id=>val(id));
+    case 8:return ['q8_perf','q8_display','q8_network','q8_files'].every(id=>val(id));
+    default:return false;
+  }}
+
+  function initDrag(){
+    const tray=root.querySelector('#q3_tray');tray.querySelectorAll('.drag-item').forEach(x=>x.remove());
+    const items=shuffle([
+      ['rj45','RJ-45 Ethernet'],['hdmi','HDMI'],['displayport','DisplayPort'],['usbc','USB-C'],['audio','3.5 mm audio'],['sata','SATA data']
+    ]);
+    items.forEach(([id,label])=>{const d=document.createElement('div');d.className='drag-item';d.draggable=true;d.dataset.item=id;d.textContent=label;d.addEventListener('dragstart',e=>{selectedDrag=id;e.dataTransfer.setData('text/plain',id);});d.addEventListener('click',()=>selectDrag(id));tray.appendChild(d);});
+    root.querySelectorAll('.dropzone').forEach(z=>{
+      z.dataset.item='';z.textContent='Drop label here';z.classList.remove('filled');
+      z.ondragover=e=>e.preventDefault();z.ondrop=e=>{e.preventDefault();placeItem(e.dataTransfer.getData('text/plain')||selectedDrag,z);};z.onclick=()=>{if(selectedDrag)placeItem(selectedDrag,z);};
+    });
+  }
+  function selectDrag(id){selectedDrag=selectedDrag===id?null:id;root.querySelectorAll('.drag-item').forEach(d=>d.classList.toggle('selected',d.dataset.item===selectedDrag));}
+  function placeItem(id,zone){if(!id||!zone)return;
+    root.querySelectorAll('.dropzone').forEach(z=>{if(z.dataset.item===id){z.dataset.item='';z.textContent='Drop label here';z.classList.remove('filled');}});
+    if(zone.dataset.item){const old=zone.dataset.item;const oldLabel=labelFor(old);const oldEl=root.querySelector('.drag-item[data-item="'+old+'"]');if(oldEl)oldEl.style.display='block';}
+    zone.dataset.item=id;zone.textContent=labelFor(id);zone.classList.add('filled');const el=root.querySelector('.drag-item[data-item="'+id+'"]');if(el)el.style.display='none';selectedDrag=null;root.querySelectorAll('.drag-item').forEach(d=>d.classList.remove('selected'));updateNav();
+  }
+  function labelFor(id){return ({rj45:'RJ-45 Ethernet',hdmi:'HDMI',displayport:'DisplayPort',usbc:'USB-C',audio:'3.5 mm audio',sata:'SATA data'})[id]||id;}
+
+  function startTimer(){clearInterval(timerHandle);renderTime();timerHandle=setInterval(()=>{if(!started||submitted)return;seconds=Math.max(0,seconds-1);renderTime();if(seconds===0){clearInterval(timerHandle);submitExam(true);}},1000);}
+  function renderTime(){const h=Math.floor(seconds/3600),m=Math.floor((seconds%3600)/60),s=seconds%60;timerEl.textContent=[h,m,s].map(v=>String(v).padStart(2,'0')).join(':');}
+
+  function resetItem(n){
+    const q=questions[n-1];q.querySelectorAll('input').forEach(e=>e.value='');q.querySelectorAll('select').forEach(e=>e.selectedIndex=0);q.querySelectorAll('textarea').forEach(e=>e.value='');
+    if(n===3)initDrag();
+    if(n===7)root.querySelector('#terminal').textContent='Microsoft Windows [Version 10.0]\nC:\\> _';
+    if(n===8){q.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));q.querySelectorAll('.tab-panel').forEach((p,i)=>p.classList.toggle('active',i===0));}
+    updateNav();
+  }
+  function resetAll(){clearInterval(timerHandle);started=false;submitted=false;seconds=90*60;current=1;flags.clear();questions.forEach((q,i)=>resetItem(i+1));shuffleSelects();initDrag();buildNav();renderTime();examShell.classList.add('hidden');reviewScreen.classList.add('hidden');resultScreen.classList.add('hidden');startScreen.classList.remove('hidden');}
+
+  function showReview(){if(!started||submitted)return;examShell.classList.add('hidden');reviewScreen.classList.remove('hidden');const body=root.querySelector('#reviewBody');body.innerHTML='';for(let n=1;n<=questions.length;n++){const tr=document.createElement('tr');const complete=isComplete(n);tr.innerHTML='<td>Question '+n+'</td><td class="'+(complete?'status-ok':'status-miss')+'">'+(complete?'Complete':(isAnswered(n)?'Partial':'Not answered'))+'</td><td>'+(flags.has(n)?'⚑ Flagged':'—')+'</td><td><button class="btn" type="button" data-returnq="'+n+'">Return</button></td>';body.appendChild(tr);}body.querySelectorAll('[data-returnq]').forEach(b=>b.onclick=()=>showQuestion(Number(b.dataset.returnq)));}
+
+  function grade(){let correct=0,total=0,items=[];for(let n=1;n<=questions.length;n++){let c=0;const arr=checks[n];arr.forEach(fn=>{total++;if(fn()){correct++;c++;}});items.push({n,c,total:arr.length});}return {correct,total,items,pct:Math.round(correct/total*100)};}
+  function submitExam(auto){if(submitted)return;submitted=true;started=false;clearInterval(timerHandle);const g=grade();examShell.classList.add('hidden');reviewScreen.classList.add('hidden');startScreen.classList.add('hidden');resultScreen.classList.remove('hidden');root.querySelector('#scoreBig').textContent=g.pct+'%';let level,text;if(g.pct>=90){level='Excellent PBQ readiness';text='Strong performance across the simulated tasks. Continue practicing under timed conditions.';}else if(g.pct>=80){level='Strong performance';text='Your applied Core 1 skills are solid. Review the missed sub-tasks before another timed attempt.';}else if(g.pct>=70){level='Developing exam readiness';text='You completed many tasks correctly, but several practical areas need another pass.';}else{level='More practice recommended';text='Use the item review below to target the practical skills that need reinforcement.';}if(auto)text='Time expired. '+text;root.querySelector('#scoreLevel').textContent=level;root.querySelector('#scoreText').textContent=text+' Partial credit is reflected in the score.';
+    const list=root.querySelector('#resultList');list.innerHTML='';g.items.forEach(it=>{const pct=Math.round(it.c/it.total*100);const cls=pct===100?'correct':pct===0?'incorrect':'partial';const d=document.createElement('div');d.className='result-q';d.innerHTML='<div class="rh"><span>Question '+it.n+' — '+explanations[it.n].title+'</span><span class="'+cls+'">'+it.c+' / '+it.total+' sub-tasks</span></div><div class="rb">'+explanations[it.n].text+'</div>';list.appendChild(d);});
+  }
+
+  root.querySelector('#startBtn').addEventListener('click',()=>{started=true;submitted=false;startScreen.classList.add('hidden');examShell.classList.remove('hidden');shuffleSelects();initDrag();buildNav();showQuestion(1);startTimer();});
+  root.querySelector('#prevBtn').addEventListener('click',()=>{if(current>1)showQuestion(current-1);});
+  root.querySelector('#nextBtn').addEventListener('click',()=>{updateNav();if(current<questions.length)showQuestion(current+1);else showReview();});
+  root.querySelector('#resetItemBtn').addEventListener('click',()=>resetItem(current));
+  flagBtn.addEventListener('click',()=>{flags.has(current)?flags.delete(current):flags.add(current);updateNav();});
+  root.querySelector('#reviewTopBtn').addEventListener('click',()=>{if(started&&!submitted)showReview();});
+  root.querySelector('#returnExamBtn').addEventListener('click',()=>showQuestion(current));
+  root.querySelector('#submitExamBtn').addEventListener('click',()=>submitExam(false));
+  root.querySelector('#restartBtn').addEventListener('click',resetAll);
+  root.addEventListener('input',()=>{if(started)updateNav();});
+  root.addEventListener('change',()=>{if(started)updateNav();});
+
+  root.querySelectorAll('.cmd-btn').forEach(b=>b.addEventListener('click',()=>{
+    if(!started)return;const out={
+      ipconfig:'C:\\> ipconfig /all\nIPv4 Address . . . . . . . . . : 192.168.20.44\nSubnet Mask  . . . . . . . . . : 255.255.255.0\nDefault Gateway  . . . . . . . : 192.168.20.1\nDNS Servers  . . . . . . . . . : 192.168.20.53',
+      gateway:'C:\\> ping 192.168.20.1\nReply from 192.168.20.1: bytes=32 time<1ms TTL=64\nReply from 192.168.20.1: bytes=32 time<1ms TTL=64\nPackets: Sent = 2, Received = 2, Lost = 0 (0% loss)',
+      internet:'C:\\> ping 8.8.8.8\nReply from 8.8.8.8: bytes=32 time=18ms TTL=117\nReply from 8.8.8.8: bytes=32 time=17ms TTL=117\nPackets: Sent = 2, Received = 2, Lost = 0 (0% loss)',
+      dns:'C:\\> nslookup portal.northstar.local\nDNS request timed out.\n    timeout was 2 seconds.\nServer:  UnKnown\nAddress:  192.168.20.53\n*** Request to UnKnown timed-out'
+    };const t=root.querySelector('#terminal');t.textContent += '\n\n'+out[b.dataset.cmd];t.scrollTop=t.scrollHeight;
+  }));
+
+  root.querySelectorAll('#q8tabs .tab').forEach(tab=>tab.addEventListener('click',()=>{const name=tab.dataset.tab;root.querySelectorAll('#q8tabs .tab').forEach(t=>t.classList.toggle('active',t===tab));questions[7].querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===name));}));
+
+  buildNav();initDrag();renderTime();
+})();
+</script>
+</body>
+</html>
